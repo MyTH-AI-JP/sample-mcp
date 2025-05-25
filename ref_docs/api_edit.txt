@@ -1,0 +1,327 @@
+<languages/>
+{{API}}
+{{MW 1.13|and after}}
+<translate><!--T:1--> '''POST request''' to edit a page.</translate>
+
+__TOC__
+
+{{anchor|Parameters}}
+<translate>
+== API documentation == <!--T:2-->
+</translate>
+{{Api help|edit|frame=yes}}
+
+{{anchor|Example}}
+<translate>
+== Example == <!--T:3-->
+
+<!--T:4-->
+The sample code in this example is in Python.</translate>
+<translate><!--T:5--> See <tvar name=1>{{ll|API:Edit/Editing with Ajax}}</tvar> for examples and responses in <tvar name=2>{{ll|Manual:Ajax|nsp=0}}</tvar>.</translate>
+
+<translate>
+=== POST request === <!--T:6-->
+
+<!--T:7-->
+Making edits, and, indeed, any POST request, is a multi-step process. 
+</translate>
+
+:1. <translate><!--T:8--> Log in, via one of the methods described in <tvar name=1>{{ll|API:Login}}</tvar>.</translate> <translate><!--T:9--> Note that while this is required to correctly attribute the edit to its author, many wikis do allow users to edit without registering or logging into an account.</translate> <!--Using proper Wiki markup lists (i.e. #) breaks formatting for the sample queries-->
+
+:2. <translate><!--T:10--> GET a {{<tvar name=1>ll|Manual:Edit token</tvar>|CSRF token}}:</translate>
+::{{ApiEx
+|p1=action=query
+|p2=format=json
+|p3=meta=tokens
+}}
+
+:3. <translate><!--T:11--> Send a POST request, with the CSRF token, to take action on a page:</translate>
+::{{ApiEx
+|p1=action=edit
+|p2=format=json
+|p3=title=Wikipedia:Sandbox
+|p4=appendtext=Hello
+|p5=token=sampleCsrfToken123+\
+}}
+
+<translate><!--T:12--> The Response section below is for the final POST request, to take action on the page.</translate>
+<translate><!--T:13--> See the pages on <tvar name=1>{{ll|API:Login}}</tvar> and <tvar name=2>{{ll|API:Tokens}}</tvar> for the intermediary JSON responses to earlier steps.</translate>
+
+<translate><!--T:14--> Also note that the tokens in the queries on this page are sample values.</translate>
+<translate><!--T:15--> Actual tokens are unique to each login session and cross-site request.</translate>
+<translate><!--T:16--> They are included only to demonstrate how to properly format queries.</translate>
+
+<translate>
+=== Response === <!--T:17-->
+</translate>
+<div style="width:60%;">
+<syntaxhighlight lang="json">
+{
+    "edit": {
+        "result": "Success",
+        "pageid": 94542,
+        "title": "Wikipedia:Sandbox",
+        "contentmodel": "wikitext",
+        "oldrevid": 371705,
+        "newrevid": 371707,
+        "newtimestamp": "2018-12-18T16:59:42Z"
+    }
+}
+</syntaxhighlight>
+</div>
+
+{{anchor|Sample code}}
+<translate>
+== Sample code == <!--T:18-->
+</translate>
+
+<!-- Transclude Sample code -->
+<!-- Care: 'Sample code 1' is a list of sections defined at level 3 '===' 
+and thus must be kept under a level 2 section (ex: == Sample Code ==) 
+Better placed isolated since section numbering impacts the display of the TOC  -->
+{{:{{translatable}}/Sample code 1}}
+
+<translate>
+== User cases == <!--T:101-->
+
+=== Edit conflicts === <!--T:19-->
+</translate>
+<translate><!--T:20--> The [[<tvar name=1>#Sample code</tvar>|Python sample]] is a basic implementation of an edit request by a registered user.</translate>
+<translate><!--T:21--> In real-world scenarios, care should be taken to prevent edit conflicts.</translate>
+<translate><!--T:22--> These occur when two or more users are attempting to edit the same page at the same time.</translate>
+
+<translate><!--T:23--> Conflicts can be prevented by retrieving the last {{<tvar name=1>ll|API:Revisions</tvar>|revision}} timestamp when we request a CSRF token.</translate>
+<translate><!--T:24--> Adding <tvar name=1><code>prop=info|revisions</code></tvar> to the CSRF token request in Step 3 allows us to access the timestamp for the last revision.</translate>
+<translate><!--T:25--> This timestamp will be used as the <tvar name=1><code>basetimestamp</code></tvar> when we make our the edit request.</translate>
+
+<translate><!--T:26--> We also need the exact time when we start our edit.</translate>
+<translate><!--T:27--> This can be retrieved by adding <tvar name=1><code>curtimestamp</code></tvar> to the CSRF request as well.</translate>
+<translate><!--T:28--> This value will serve as our <tvar name=1><code>starttimestamp</code></tvar>.</translate>
+
+<translate>
+<!--T:29-->
+Finally, in the actual edit request, set the <tvar name=1><code>basetimestamp</code></tvar> and <tvar name=2><code>starttimestamp</code></tvar> parameters, like so:
+</translate>
+
+{{ApiEx
+|p1=action=edit
+|p2=format=json
+|p3=title=Wikipedia:Sandbox
+|p4=appendtext=Hello
+|p5=basetimestamp=2018-12-25T14:05:36Z
+|p6=starttimestamp=2019-01-09T10:07:19Z
+|p7=token=sampleCsrfToken123+\
+}}
+
+<translate>
+=== Large edits === <!--T:30-->
+</translate>
+<translate><!--T:31--> POST requests containing large amounts of text content (8000+ characters) should be sent with <tvar name=1><code>Content-Type: multipart/form-data</code></tvar> indicated in the [[<tvar name=2>devmo:Web/HTTP/Headers</tvar>|header]].</translate>
+<translate><!--T:32--> Because <tvar name=1><code>multipart/form-data</code></tvar> does not need to add HTML escape characters (i.e., [[<tvar name=2>devmo:Glossary/percent-encoding</tvar>|percent encoding]]) for spaces and punctuation, the amount of data passed will subsequently be much smaller than the percent-encoded equivalent.</translate>
+
+<translate><!--T:33--> However, there is still some overhead added by <tvar name=1><code>multipart/form-data</code></tvar> -- roughly, 160 bytes per parameter.</translate>
+<translate><!--T:34--> For short messages that don't require adding many escape characters, this amount of overhead can be inefficient, and percent-encoding is preferred.</translate><ref>
+https://stackoverflow.com/a/4073451
+</ref>
+
+<translate>
+<!--T:35-->
+Note that in our [[<tvar name=1>#Example</tvar>|Python sample code]], the request is percent-encoded by default.
+</translate>
+
+<translate><!--T:36--> See [[<tvar name=1>devmo:Web/HTTP/Headers/Content-Type</tvar>|the MDN web docs]] for a more technical discussion of content-type and POST requests.</translate>
+<translate><!--T:37--> See [<tvar name=url>http://docs.python-requests.org/en/master/user/quickstart/#more-complicated-post-requests</tvar> the Python Requests documentation] for how to pass <tvar name=1><code>multipart/form-data</code></tvar> using syntax similar to our Python sample code.</translate>
+
+<translate>
+=== CAPTCHAs === <!--T:38-->
+</translate>
+<translate><!--T:39--> If the wiki you are targeting uses {{<tvar name=1>ll|CAPTCHA</tvar>|CAPTCHAs}}, your request may return an error containing an ID number and a simple test, such as a question, a math problem, or a URL to an image.</translate>
+<translate><!--T:40--> In order to complete your edit, you must complete the test, then retry your request with the id and the correct answer(s) appended to the original query string, like so:</translate> <code>captchaid=sampleId&captchaword=answer</code>
+
+<translate><!--T:41--> Other CAPTCHA systems and extensions may use different parameters for similar use.</translate>
+<translate><!--T:42--> In general, use the field names for the ID and test questions as the parameters in your second request.</translate>
+
+<translate>
+== Possible errors == <!--T:43-->
+</translate>
+{| class="wikitable sortable"
+! <translate><!--T:44--> Code</translate> !! <translate><!--T:45--> Info</translate>
+|-
+| notitle || {{int|Apierror-missingparam|title}}
+|-
+| missingparam || {{int|apierror-missingparam-at-least-one-of|text{{int|comma-separator}}appendtext{{int|and}}{{int|word-separator}}undo|3}}
+|-
+| notoken || {{int|Apierror-missingparam|token}}
+|-
+| invalidsection || {{int|Apierror-invalidsection}}
+|-
+| protectedpage || {{#ifeq:{{PAGELANGUAGE}}|en |{{int|protectedpagetext/en}} |{{int|protectedpagetext}} }}
+|-
+| cantcreate || {{int|nocreate-loggedin}}
+|-
+| cantcreate-anon || <translate><!--T:90--> Anonymous users can't create new pages</translate>
+|-
+| articleexists || {{int|Apierror-articleexists}}
+|-
+| noimageredirect-anon || {{int|Apierror-noimageredirect-anon}}
+|-
+| noimageredirect || {{int|Apierror-noimageredirect}}
+|-
+| spamdetected || {{int|Apierror-spamdetected|'''Wikitext'''}}
+|-
+| abusefilter-warning || <translate><!--T:102--> This action has been automatically identified as harmful.</translate>
+|-
+| abusefilter-disallowed || <translate><!--T:103--> This action has been automatically identified as harmful, and therefore disallowed.</translate>
+|-
+| contenttoobig || {{int|Apierror-contenttoobig|'''bytes'''}}<br />Where '''bytes''' is the value of {{ll|Manual:$wgMaxArticleSize|$wgMaxArticleSize}}.
+|-
+| noedit-anon || {{int|Apierror-noedit-anon}}
+|-
+| noedit || {{int|Apierror-noedit}}
+|-
+| pagedeleted || {{int|Apierror-pagedeleted}}
+|-
+| emptypage || {{int|Apierror-emptypage}}
+|-
+| emptynewsection || {{int|Apierror-emptynewsection}}
+|-
+| editconflict || {{int|edit-conflict}}
+|-
+| revwrongpage || {{int|Apierror-revwrongpage|'''revid'''|'''pagename'''}}<br /><translate><!--T:93--> Thrown if an invalid revid is given for <tvar name=undo><code>undo</code></tvar> or <tvar name=undoafter><code>undoafter</code></tvar></translate>
+|-
+| undofailure<!--ApiBase.php removes dash from "undo-failure"--> || {{int|undo-failure}}
+|-
+| missingtitle || {{int|Apierror-missingtitle}}<br /><translate><!--T:94--> (see above <tvar name=nocreate><code>nocreate</code></tvar> [[<tvar name=1>#Parameters</tvar>|parameter]])</translate>
+|-
+| mustbeposted || {{int|Apierror-mustbeposted|edit}}
+|-
+| readapidenied || {{int|Apierror-readapidenied}}
+|-
+| writeapidenied || {{int|Apierror-writeapidenied}}
+|-
+| noapiwrite || {{int|Apierror-noapiwrite}}
+|-
+| badtoken || {{int|Apierror-badtoken}}
+|-
+| missingparam || {{int|Apierror-missingparam|title, pageid}}
+|-
+| invalidparammix || {{int|Apierror-invalidparammix|title, pageid}}
+|-
+| invalidtitle || {{int|Apierror-invalidtitle|'''title'''}}
+|-
+| invalid-content-data || {{int|Invalid-content-data}}<br/><translate><!--T:105--> occurs when trying to edit a JSON page with non-conforming data, or while trying to edit a <tvar name=1>MassMessageListContent</tvar> page</translate>
+|-
+| nosuchpageid || {{int|Apierror-nosuchpageid|'''pageid'''}}
+|-
+| pagecannotexist || {{int|Apierror-pagecannotexist}}
+|-
+| nosuchrevid || {{int|Apierror-nosuchrevid|'''undo'''}}
+|-
+| nosuchrevid || {{int|Apierror-nosuchrevid|'''undoafter'''}}
+|-
+| badmd5 || {{int|Apierror-badmd5}}
+|-
+| hookaborted || {{int|hookaborted}}
+|-
+| parseerror || {{int|apierror-contentserializationexception|parseerror}}
+|-
+| summaryrequired || {{int|apierror-summaryrequired}}
+|-
+| blocked || {{int|Apierror-blocked}}
+|-
+| ratelimited || {{int|Apierror-ratelimited}}
+|-
+| unknownerror || {{int|Apierror-unknownerror|'''retval'''}}
+|-
+| nosuchsection || {{int|Apierror-nosuchsection}}
+|-
+| sectionsnotsupported || {{int|Apierror-sectionsnotsupported}}
+|-
+| editnotsupported || <translate><!--T:98--> Editing of this type of page is not supported using the text based edit API.</translate>
+|-
+| appendnotsupported || {{int|Apierror-appendnotsupported}}
+|-
+| redirect-appendonly || {{int|Apierror-redirect-appendonly}}
+|-
+| edit-invalidredirect || {{int|Apierror-edit-invalidredirect}}
+|-
+| badformat || {{int|Apierror-badformat}}
+|-
+| customcssprotected || {{int|customcssprotected}}
+|-
+| customjsprotected || {{int|customjsprotected}}
+|-
+| taggingnotallowed || <translate><!--T:99--> You don't have permission to set change tags</translate>
+|-
+| badtags || {{int|tags-apply-not-allowed-one|'''Tag'''}}<br />{{int|tags-apply-not-allowed-multi|'''Tag1{{int|comma-separator}} Tag2'''}}
+|-
+| tpt-target-page || {{int|tpt-target-page}}<br/><translate><!--T:100--> When using <tvar name=translate>{{ll|Extension:Translate}}</tvar>, editing of a translated subpage is not allowed.</translate>
+|}
+
+<translate>
+== Parameter history == <!--T:46-->
+</translate>
+* v1.35: <translate><!--T:104--> Introduced <tvar name=1><code>baserevid</code></tvar></translate>
+* v1.25: <translate><!--T:77--> Introduced <tvar name=1><code>tags</code></tvar></translate>
+* v1.21: <translate><!--T:78--> Introduced <tvar name=1><code>contentformat</code>, <code>contentmodel</code></tvar></translate>
+* v1.20: <translate><!--T:79--> Introduced <tvar name=1><code>pageid</code></tvar></translate>
+* v1.19: <translate><!--T:80--> Introduced <tvar name=1><code>sectiontitle</code></tvar></translate>
+* v1.18: <translate><!--T:81--> Deprecated <tvar name=1><code>captchaid</code>, <code>captchaword</code></tvar></translate>
+* v1.17: <translate><!--T:82--> Introduced <tvar name=1><code>redirect</code></tvar></translate>
+* v1.16: <translate><!--T:83--> Deprecated <tvar name=1><code>watch</code>, <code>unwatch</code></tvar></translate>
+* v1.16: <translate><!--T:84--> Introduced <tvar name=1><code>watchlist</code></tvar></translate>
+* v1.15: <translate><!--T:85--> Introduced <tvar name=1><code>undo</code>, <code>undoafter</code></tvar></translate>
+* v1.14: <translate><!--T:86--> Introduced <tvar name=1><code>starttimestamp</code></tvar></translate>
+
+<translate>
+== Additional notes == <!--T:47-->
+
+<!--T:48-->
+* Log in is not strictly required by the API, but it is needed to correctly attribute the edit to its author.</translate> <translate><!--T:49--> A successful edit from a user who is not logged in will be attributed to their IP address.</translate>
+<translate>
+<!--T:50-->
+* Bots that are not logged in may face restrictions on editing and other write requests; see {{<tvar name=1>ll|Manual:Creating a bot#Logging_in</tvar>|Manual:Creating a bot#Logging in}} for more details.</translate>
+<translate>
+<!--T:51-->
+* Users who are not logged in will always be given the empty CSRF token, <tvar name=1><code>+\</code></tvar>.</translate>
+<translate>
+<!--T:52-->
+* The process for requesting a token has changed several times across versions.</translate> <translate><!--T:53--> See <tvar name=1>{{ll|API:Tokens}}</tvar> for more information.</translate>
+<translate>
+<!--T:54-->
+* <tvar name=1>{{ll|ResourceLoader/Core modules#mw.user.tokens|ResourceLoader}}</tvar> provides a way to access edit tokens when running code within a wiki page.</translate>
+<translate>
+<!--T:55-->
+* You can use the same CSRF token for all edit operations across the same wiki, during a single login session.</translate>
+<translate>
+<!--T:56-->
+* It is a good practice to pass any tokens in your request at the end of the query string, or at least after the text parameter.</translate> <translate><!--T:57--> That way, if the connection is interrupted, the token will not be passed and the edit will fail.</translate> <translate><!--T:58--> If you are using the <tvar name=1>{{ll|ResourceLoader/Core modules#mediawiki.api|mw.Api}}</tvar> object to make requests, this is done automatically.</translate>
+<translate>
+<!--T:59-->
+* Although <tvar name=1><code>captchaid</code></tvar> and <tvar name=2><code>captchaword</code></tvar> have, technically, been removed from API:Edit since v1.18, <tvar name=3>{{ll|Extension:ConfirmEdit}}</tvar> extends API:Edit to work with CAPTCHAs.</translate> <translate><!--T:60--> Thus, with ConfirmEdit installed, these parameters are still available.</translate> <translate><!--T:61--> ConfirmEdit comes packaged with the MediaWiki software, v1.18+.</translate>
+
+== Limitations ==
+* The API does not yet support editing [[Multi-Content Revisions|content slots]] ({{Phab|T200570}}). You can do so instead with an extension like [[Extension:WSSlots]], which enables the <code>editslot</code> API action.
+
+<translate>
+== See also == <!--T:62-->
+</translate>
+* {{ll|Help:Editing}} - <translate><!--T:63--> contains useful links on editing articles.</translate>
+* {{ll|Manual:Bot passwords}} - <translate><!--T:64--> describes how to log in using a simplified interface when accessing wikis via a script or application, rather than the GUI.</translate>
+* {{ll|Manual:Creating a bot#Editing; edit tokens|Manual:Creating a bot}} - <translate><!--T:65--> more details on using a bot to automatically edit pages.</translate>
+* {{ll|ResourceLoader/Default modules#mw.user.tokens|ResourceLoader}} - <translate><!--T:66--> provides a way to access edit tokens when running JavaScript within a MediaWiki page.</translate>
+* {{ll|API:Tokens}} - <translate><!--T:67--> has more details on using tokens to log in or make POST requests.</translate>
+* {{ll|API:Tokens (action)}} - <translate><!--T:68--> a deprecated API, distinct from <tvar name=1>{{ll|API:Tokens}}</tvar>, for requesting tokens in earlier versions of MediaWiki.</translate>
+* {{ll|API:Compare}} - <translate><!--T:69--> allows you to diff between edits on a page.</translate>
+* {{ll|API:Managetags}} - <translate><!--T:70--> alters tags on a page.</translate>
+* {{ll|API:Rollback}} - <translate><!--T:71--> reverts a series of edits.</translate>
+* {{ll|API:Filerevert}} - <translate><!--T:72--> rolls back files to an earlier state.</translate>
+* {{ll|API:Revisiondelete}} - <translate><!--T:73--> deletes and restores revisions to a page.</translate>
+
+<translate>
+
+== References == <!--T:74-->
+</translate>
+{{Reflist}}
+
+[[Category:MediaWiki API{{#translation:}}]]
